@@ -9,7 +9,7 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.udacity.jdnd</groupId>
-	<artifactId>SuperDuperDrive</artifactId>
+	<artifactId>cloudstorage</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>SuperDuperDrive</name>
 	<description>Udacity Java Developer ND Project 1</description>
