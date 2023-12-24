@@ -2,6 +2,7 @@ package com.udacity.jdnd.cloudstorage.service;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
@@ -10,6 +11,7 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
 import java.util.Base64;
 
+@Service
 public class HashService {
     private final Logger logger = LoggerFactory.getLogger(HashService.class);
 
