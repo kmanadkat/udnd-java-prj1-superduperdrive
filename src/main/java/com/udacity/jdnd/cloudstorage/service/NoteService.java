@@ -36,8 +36,23 @@ public class NoteService {
         if(user == null) {
             throw new InvalidArgumentException("User not found!");
         }
-        Note newNote = new Note(noteForm.getNoteId(), noteForm.getNoteTitle(), noteForm.getNoteDescription(), user.getUserId());
-        noteMapper.insert(newNote);
+        // New Note
+        if(noteForm.getNoteId() == null) {
+            Note newNote = new Note(noteForm.getNoteId(), noteForm.getNoteTitle(), noteForm.getNoteDescription(), user.getUserId());
+            noteMapper.insert(newNote);
+        }
+        // Update Note
+        else {
+            // Verify Note belongs to user
+            Note userNote = noteMapper.getNote(noteForm.getNoteId());
+            if(!Objects.equals(userNote.getUserId(), user.getUserId())){
+                throw new InvalidArgumentException("User action not allowed!");
+            }
+            // Update Title & Description
+            userNote.setNoteTitle(noteForm.getNoteTitle());
+            userNote.setNoteDescription(noteForm.getNoteDescription());
+            noteMapper.update(userNote);
+        }
     }
 
     public void deleteNote(Integer noteId, String username) throws InvalidArgumentException {
