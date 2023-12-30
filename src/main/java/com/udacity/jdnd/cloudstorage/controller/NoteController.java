@@ -1,5 +1,6 @@
 package com.udacity.jdnd.cloudstorage.controller;
 
+import com.udacity.jdnd.cloudstorage.model.CredentialForm;
 import com.udacity.jdnd.cloudstorage.model.Note;
 import com.udacity.jdnd.cloudstorage.model.NoteForm;
 import com.udacity.jdnd.cloudstorage.service.NoteService;
@@ -30,7 +31,12 @@ public class NoteController {
     }
 
     @PostMapping
-    public String addUserNote(Authentication authentication, NoteForm noteForm, Model model) {
+    public String addUserNote(
+            Authentication authentication,
+            NoteForm noteForm,
+            CredentialForm credentialForm,
+            Model model
+    ) {
         String username = authentication.getName();
         this.noteService.addNewNote(noteForm, username);
         noteForm.setNoteId(null);
@@ -42,7 +48,13 @@ public class NoteController {
     }
 
     @GetMapping(value = "/delete/{noteId}")
-    public String deleteUserNote(Authentication authentication, @PathVariable Integer noteId, NoteForm noteForm, Model model) {
+    public String deleteUserNote(
+            Authentication authentication,
+            @PathVariable Integer noteId,
+            NoteForm noteForm,
+            CredentialForm credentialForm,
+            Model model
+    ) {
         String username = authentication.getName();
         this.noteService.deleteNote(noteId, username);
         model.addAttribute("notes", this.noteService.getUserNotes(username));

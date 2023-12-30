@@ -1,5 +1,6 @@
 package com.udacity.jdnd.cloudstorage.controller;
 
+import com.udacity.jdnd.cloudstorage.model.CredentialForm;
 import com.udacity.jdnd.cloudstorage.model.NoteForm;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
@@ -11,7 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @RequestMapping("/home")
 public class HomeController {
     @GetMapping
-    public String homeView(Authentication authentication, NoteForm noteForm, Model model) {
+    public String homeView(Authentication authentication, NoteForm noteForm, CredentialForm credentialForm, Model model) {
         return "home";
     }
 }
