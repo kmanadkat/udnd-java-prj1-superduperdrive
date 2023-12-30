@@ -138,7 +138,9 @@
                                 <tbody>
                                 <tr th:each="cred: ${credentials}">
                                     <td>
-                                        <button type="button" class="btn btn-success">Edit</button>
+                                        <button type="button"
+                                                th:onclick="javascript:showCredentialModal([[${cred.credentialId}]],[[${cred.url}]],[[${cred.username}]],[[${cred.password}]])"
+                                                class="btn btn-success">Edit</button>
                                         <a class="btn btn-danger">Delete</a>
                                     </td>
                                     <th scope="row" th:text="${cred.url}"></th>
@@ -194,6 +196,19 @@
 
         <!--For opening the note modal-->
         <script type="text/javascript">
+            // Fetch Decrypted Password
+            async function fetchDecryptPassword(credentialId){
+                const port = location.port;
+                const response = await fetch(`http://localhost:${port}/credential/decrypt-password/${credentialId}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    const result = JSON.parse(JSON.stringify(data));
+                    return result.decryptedPassword;
+                } else {
+                    return "";
+                }
+            }
+
             // For opening the note modal
             function showNoteModal(noteId, noteTitle, noteDescription) {
                 $('#note-id').val(noteId ? noteId : '');
@@ -203,11 +218,15 @@
             }
 
             // For opening the credentials modal
-            function showCredentialModal(credentialId, url, username, password) {
+            async function showCredentialModal(credentialId, url, username, password) {
+                let decryptedPassword = password;
+                if(credentialId){
+                    decryptedPassword = await fetchDecryptPassword(credentialId);
+                }
                 $('#credential-id').val(credentialId ? credentialId : '');
                 $('#credential-url').val(url ? url : '');
                 $('#credential-username').val(username ? username : '');
-                $('#credential-password').val(password ? password : '');
+                $('#credential-password').val(decryptedPassword ? decryptedPassword : '');
                 $('#credentialModal').modal('show');
             }
         </script>

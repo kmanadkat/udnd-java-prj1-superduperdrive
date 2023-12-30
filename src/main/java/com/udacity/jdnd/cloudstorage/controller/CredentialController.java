@@ -4,21 +4,22 @@ import com.udacity.jdnd.cloudstorage.model.Credential;
 import com.udacity.jdnd.cloudstorage.model.CredentialForm;
 import com.udacity.jdnd.cloudstorage.model.NoteForm;
 import com.udacity.jdnd.cloudstorage.service.CredentialService;
+import com.udacity.jdnd.cloudstorage.service.EncryptionService;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Controller
 @RequestMapping("/credential")
 public class CredentialController {
     private final CredentialService credentialService;
 
-    public CredentialController(CredentialService credentialService) {
+    public CredentialController(CredentialService credentialService, EncryptionService encryptionService) {
         this.credentialService = credentialService;
     }
 
@@ -27,6 +28,16 @@ public class CredentialController {
         String username = authentication.getName();
         model.addAttribute("credentials", this.credentialService.getUserCredentials(username));
         return "home";
+    }
+
+    @GetMapping(value = "/decrypt-password/{credentialId}")
+    @ResponseBody
+    public Map<String, String> decryptCredential(Authentication authentication, @PathVariable Integer credentialId) {
+        String username = authentication.getName();
+        String rawPassword = credentialService.getUserCredentialDecoded(credentialId, username);
+        Map<String, String> response = new HashMap<>();
+        response.put("decryptedPassword", rawPassword);
+        return response;
     }
 
     @PostMapping
