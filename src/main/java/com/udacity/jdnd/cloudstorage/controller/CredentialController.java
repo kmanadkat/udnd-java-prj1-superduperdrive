@@ -58,4 +58,19 @@ public class CredentialController {
         model.addAttribute("credentials", credentials);
         return "home";
     }
+
+    @GetMapping(value = "/delete/{credentialId}")
+    public String deleteUserCredential(
+            Authentication authentication,
+            @PathVariable Integer credentialId,
+            NoteForm noteForm,
+            CredentialForm credentialForm,
+            Model model
+    ) {
+        String username = authentication.getName();
+
+        this.credentialService.deleteCredential(credentialId, username);
+        model.addAttribute("credentials", this.credentialService.getUserCredentials(username));
+        return "home";
+    }
 }

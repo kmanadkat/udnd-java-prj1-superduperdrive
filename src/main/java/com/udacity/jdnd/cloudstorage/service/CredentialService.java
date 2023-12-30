@@ -40,17 +40,29 @@ public class CredentialService {
         if(user == null) {
             throw new InvalidArgumentException("User not found!");
         }
-        String keys = hashService.getEncodedSalt();
-        String encryptedPassword = encryptionService.encryptValue(credentialForm.getPassword(), keys);
-        Credential newCredential = new Credential(
-                credentialForm.getCredentialId(),
-                credentialForm.getUrl(),
-                credentialForm.getUsername(),
-                keys,
-                encryptedPassword,
-                user.getUserId()
-        );
-        credentialMapper.insert(newCredential);
+        // New Credential
+        if(credentialForm.getCredentialId() == null) {
+            String keys = hashService.getEncodedSalt();
+            String encryptedPassword = encryptionService.encryptValue(credentialForm.getPassword(), keys);
+            Credential newCredential = new Credential(
+                    credentialForm.getCredentialId(),
+                    credentialForm.getUrl(),
+                    credentialForm.getUsername(),
+                    keys,
+                    encryptedPassword,
+                    user.getUserId()
+            );
+            credentialMapper.insert(newCredential);
+        }
+        // Update Credential
+        else {
+            Credential oldCredential = credentialMapper.getCredential(credentialForm.getCredentialId());
+            oldCredential.setUrl(credentialForm.getUrl());
+            oldCredential.setUsername(credentialForm.getUsername());
+            String encryptedPassword = encryptionService.encryptValue(credentialForm.getPassword(), oldCredential.getKeys());
+            oldCredential.setPassword(encryptedPassword);
+            credentialMapper.update(oldCredential);
+        }
     }
 
     public String getUserCredentialDecoded(Integer credentialId, String username) throws InvalidArgumentException {
@@ -68,5 +80,23 @@ public class CredentialService {
             throw new InvalidArgumentException("Invalid User Access");
         }
         return encryptionService.decryptValue(credential.getPassword(), credential.getKeys());
+    }
+
+    public void deleteCredential(Integer credentialId, String username) throws InvalidArgumentException {
+        // Validate User
+        User user = userMapper.getUser(username);
+        if(user == null) {
+            throw new InvalidArgumentException("User not found!");
+        }
+        // Validate Note
+        Credential credential = credentialMapper.getCredential(credentialId);
+        if(credential == null) {
+            throw new InvalidArgumentException("Credential not found!");
+        }
+        // Validate Ownership
+        if(!Objects.equals(credential.getUserId(), user.getUserId())) {
+            throw new InvalidArgumentException("Credential does not below to user");
+        }
+        credentialMapper.delete(credentialId);
     }
 }
