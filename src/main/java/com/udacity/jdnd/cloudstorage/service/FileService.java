@@ -62,7 +62,6 @@ public class FileService {
         String contentType = file.getContentType();
         String fileSize = String.valueOf(file.getSize());
         fileMapper.insert(new File(null, fileName, contentType, fileSize, user.getUserId(), fileData));
-        return;
     }
 
     public void deleteUserFile(Integer fileId, String username) throws InvalidArgumentException, IOException {

@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -31,10 +32,16 @@ public class FileController {
     }
 
     @GetMapping
-    public String getUserFiles(Authentication authentication, Model model) {
-        String username = authentication.getName();
-        model.addAttribute("files", this.fileService.getUserFiles(username));
-        return "home";
+    public String getUserFiles(Authentication authentication, Model model, RedirectAttributes redirectAttributes) {
+        try {
+            String username = authentication.getName();
+            model.addAttribute("files", this.fileService.getUserFiles(username));
+            return "home";
+        } catch (Exception e) {
+            String errorMsg = e.getMessage();
+            redirectAttributes.addFlashAttribute("errorMsg", errorMsg);
+            return "redirect:/result?error";
+        }
     }
 
     @PostMapping
@@ -43,17 +50,19 @@ public class FileController {
             MultipartFile fileUpload,
             NoteForm noteForm,
             CredentialForm credentialForm,
+            RedirectAttributes redirectAttributes,
             Model model
     ) {
         String username = authentication.getName();
         try {
             fileService.addNewFile(fileUpload, username);
             model.addAttribute("files", this.fileService.getUserFiles(username));
-            model.addAttribute("fileError", "");
-        } catch(Exception ex) {
-            model.addAttribute("fileError", ex.getMessage());
+            return "redirect:/result?success";
+        } catch (Exception e) {
+            String errorMsg = e.getMessage();
+            redirectAttributes.addFlashAttribute("errorMsg", errorMsg);
+            return "redirect:/result?error";
         }
-        return "home";
     }
 
     @GetMapping(value = "/view/{fileId}")
@@ -75,17 +84,14 @@ public class FileController {
             InputStream inputStream = new ByteArrayInputStream(fileData);
             InputStreamResource resource = new InputStreamResource(inputStream);
 
-            model.addAttribute("fileError", "");
-
             return ResponseEntity.ok()
                     .header(HttpHeaders.CONTENT_DISPOSITION, "attachment;filename=" + fileName)
                     .contentType(MediaType.parseMediaType(contentType))
                     .body(resource);
 
         } catch (InvalidArgumentException e) {
-            model.addAttribute("fileError", e.getMessage());
+            return ResponseEntity.internalServerError().body("File not found");
         }
-        return ResponseEntity.internalServerError().body("File not found");
     }
 
     @GetMapping(value = "/delete/{fileId}")
@@ -95,17 +101,19 @@ public class FileController {
             MultipartFile fileUpload,
             NoteForm noteForm,
             CredentialForm credentialForm,
+            RedirectAttributes redirectAttributes,
             Model model
     ){
         String username = authentication.getName();
         try{
             fileService.deleteUserFile(fileId, username);
             model.addAttribute("files", this.fileService.getUserFiles(username));
-            model.addAttribute("fileError", "");
-        } catch (Exception ex) {
-            model.addAttribute("fileError", ex.getMessage());
+            return "redirect:/result?success";
+        } catch (Exception e) {
+            String errorMsg = e.getMessage();
+            redirectAttributes.addFlashAttribute("errorMsg", errorMsg);
+            return "redirect:/result?error";
         }
-        return "home";
     }
 
 }
