@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.List;
 
@@ -21,13 +22,6 @@ public class NoteController {
 
     public NoteController(NoteService noteService) {
         this.noteService = noteService;
-    }
-
-    @GetMapping
-    public String getUserNotes(Authentication authentication, Model model){
-        String username = authentication.getName();
-        model.addAttribute("notes", this.noteService.getUserNotes(username));
-        return "home";
     }
 
     @PostMapping
@@ -44,7 +38,7 @@ public class NoteController {
         noteForm.setNoteDescription("");
         List<Note> notes = this.noteService.getUserNotes(username);
         model.addAttribute("notes", notes);
-        return "home";
+        return "redirect:/result?success";
     }
 
     @GetMapping(value = "/delete/{noteId}")
@@ -53,11 +47,18 @@ public class NoteController {
             @PathVariable Integer noteId,
             NoteForm noteForm,
             CredentialForm credentialForm,
+            RedirectAttributes redirectAttributes,
             Model model
     ) {
         String username = authentication.getName();
-        this.noteService.deleteNote(noteId, username);
-        model.addAttribute("notes", this.noteService.getUserNotes(username));
-        return "home";
+        try {
+            this.noteService.deleteNote(noteId, username);
+            model.addAttribute("notes", this.noteService.getUserNotes(username));
+            return "redirect:/result?success";
+        } catch (Exception e) {
+            String errorMsg = e.getMessage();
+            redirectAttributes.addFlashAttribute("errorMsg", errorMsg);
+            return "redirect:/result?error";
+        }
     }
 }
