@@ -9,6 +9,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.HashMap;
 import java.util.List;
@@ -24,10 +25,16 @@ public class CredentialController {
     }
 
     @GetMapping
-    public String getUserCredentials(Authentication authentication, Model model){
-        String username = authentication.getName();
-        model.addAttribute("credentials", this.credentialService.getUserCredentials(username));
-        return "home";
+    public String getUserCredentials(Authentication authentication, Model model, RedirectAttributes redirectAttributes){
+        try {
+            String username = authentication.getName();
+            model.addAttribute("credentials", this.credentialService.getUserCredentials(username));
+            return "home";
+        } catch (Exception e) {
+            String errorMsg = e.getMessage();
+            redirectAttributes.addFlashAttribute("errorMsg", errorMsg);
+            return "redirect:/result?error";
+        }
     }
 
     @GetMapping(value = "/decrypt-password/{credentialId}")
@@ -45,18 +52,25 @@ public class CredentialController {
             Authentication authentication,
             NoteForm noteForm,
             CredentialForm credentialForm,
+            RedirectAttributes redirectAttributes,
             Model model
     ) {
-        String username = authentication.getName();
-        this.credentialService.addNewCredential(credentialForm, username);
-        credentialForm.setCredentialId(null);
-        credentialForm.setUrl("");
-        credentialForm.setUsername("");
-        credentialForm.setPassword("");
+        try {
+            String username = authentication.getName();
+            this.credentialService.addNewCredential(credentialForm, username);
+            credentialForm.setCredentialId(null);
+            credentialForm.setUrl("");
+            credentialForm.setUsername("");
+            credentialForm.setPassword("");
 
-        List<Credential> credentials = this.credentialService.getUserCredentials(username);
-        model.addAttribute("credentials", credentials);
-        return "home";
+            List<Credential> credentials = this.credentialService.getUserCredentials(username);
+            model.addAttribute("credentials", credentials);
+            return "redirect:/result?success";
+        } catch (Exception e) {
+            String errorMsg = e.getMessage();
+            redirectAttributes.addFlashAttribute("errorMsg", errorMsg);
+            return "redirect:/result?error";
+        }
     }
 
     @GetMapping(value = "/delete/{credentialId}")
@@ -65,12 +79,19 @@ public class CredentialController {
             @PathVariable Integer credentialId,
             NoteForm noteForm,
             CredentialForm credentialForm,
+            RedirectAttributes redirectAttributes,
             Model model
     ) {
-        String username = authentication.getName();
+        try {
+            String username = authentication.getName();
 
-        this.credentialService.deleteCredential(credentialId, username);
-        model.addAttribute("credentials", this.credentialService.getUserCredentials(username));
-        return "home";
+            this.credentialService.deleteCredential(credentialId, username);
+            model.addAttribute("credentials", this.credentialService.getUserCredentials(username));
+            return "redirect:/result?success";
+        } catch (Exception e) {
+            String errorMsg = e.getMessage();
+            redirectAttributes.addFlashAttribute("errorMsg", errorMsg);
+            return "redirect:/result?error";
+        }
     }
 }

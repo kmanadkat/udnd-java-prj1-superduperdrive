@@ -29,16 +29,23 @@ public class NoteController {
             Authentication authentication,
             NoteForm noteForm,
             CredentialForm credentialForm,
+            RedirectAttributes redirectAttributes,
             Model model
     ) {
-        String username = authentication.getName();
-        this.noteService.addNewNote(noteForm, username);
-        noteForm.setNoteId(null);
-        noteForm.setNoteTitle("");
-        noteForm.setNoteDescription("");
-        List<Note> notes = this.noteService.getUserNotes(username);
-        model.addAttribute("notes", notes);
-        return "redirect:/result?success";
+        try {
+            String username = authentication.getName();
+            this.noteService.addNewNote(noteForm, username);
+            noteForm.setNoteId(null);
+            noteForm.setNoteTitle("");
+            noteForm.setNoteDescription("");
+            List<Note> notes = this.noteService.getUserNotes(username);
+            model.addAttribute("notes", notes);
+            return "redirect:/result?success";
+        } catch (Exception e) {
+            String errorMsg = e.getMessage();
+            redirectAttributes.addFlashAttribute("errorMsg", errorMsg);
+            return "redirect:/result?error";
+        }
     }
 
     @GetMapping(value = "/delete/{noteId}")
