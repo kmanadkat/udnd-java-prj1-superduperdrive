@@ -1,20 +1,21 @@
 package com.udacity.jdnd.cloudstorage;
 
 import org.junit.jupiter.api.*;
-import org.openqa.selenium.By;
-import org.openqa.selenium.NoSuchElementException;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
+import org.openqa.selenium.*;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.test.annotation.DirtiesContext;
 
 import java.io.File;
 import java.time.Duration;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.ANY)
 class CloudStorageApplicationTests {
 
 	@LocalServerPort
@@ -192,7 +193,7 @@ class CloudStorageApplicationTests {
 		uploadButton.click();
 		try {
 			webDriverWait.until(ExpectedConditions.presenceOfElementLocated(By.id("success")));
-		} catch (org.openqa.selenium.TimeoutException e) {
+		} catch (TimeoutException e) {
 			System.out.println("Large File upload failed");
 		}
 		Assertions.assertFalse(driver.getPageSource().contains("HTTP Status 403 – Forbidden"));
@@ -244,7 +245,8 @@ class CloudStorageApplicationTests {
 	public void createNote() {
 		WebDriverWait webDriverWait = new WebDriverWait(driver, Duration.ofSeconds(2));
 
-		// Existing User Login
+		// User Login
+		doMockSignUp("Udacity", "Java", "student", "roll_number");
 		doLogIn("student", "roll_number");
 
 		// Open Note Section
@@ -279,9 +281,8 @@ class CloudStorageApplicationTests {
 	public void editNote() {
 		WebDriverWait webDriverWait = new WebDriverWait(driver, Duration.ofSeconds(2));
 
-		// Existing User Login
-		doLogIn("student", "roll_number");
-
+		// Test Data Prepare
+		createNote();
 
 		// Open Note Section
 		openTab(webDriverWait, "notes");
@@ -324,8 +325,8 @@ class CloudStorageApplicationTests {
 	public void deleteNote() {
 		WebDriverWait webDriverWait = new WebDriverWait(driver, Duration.ofSeconds(2));
 
-		// Existing User Login
-		doLogIn("student", "roll_number");
+		// Test Data
+		editNote();
 
 		// Open Note Section
 		openTab(webDriverWait, "notes");
@@ -356,7 +357,8 @@ class CloudStorageApplicationTests {
 	public void createCredential() {
 		WebDriverWait webDriverWait = new WebDriverWait(driver, Duration.ofSeconds(2));
 
-		// Existing User Login
+		// User Login
+		doMockSignUp("Udacity", "Java", "student", "roll_number");
 		doLogIn("student", "roll_number");
 
 		// Open Credentials Section
@@ -391,6 +393,59 @@ class CloudStorageApplicationTests {
 		Assertions.assertEquals(driver.findElement(By.className("cred-entry-url")).getText(), "https://udacity.com");
 		Assertions.assertEquals(driver.findElement(By.className("cred-entry-username")).getText(), "student");
 		Assertions.assertNotEquals(driver.findElement(By.className("cred-entry-password")).getText(), "roll_number");
+	}
+
+
+	@Test
+	public void editCredential() {
+		WebDriverWait webDriverWait = new WebDriverWait(driver, Duration.ofSeconds(2));
+
+		// Prepare Data
+		createCredential();
+
+		// Open Credentials Section
+		openTab(webDriverWait, "credentials");
+
+		// Verify Existing Credential
+		webDriverWait.until(ExpectedConditions.visibilityOfElementLocated(By.id("credentialTable")));
+		String credEntryUrl = driver.findElement(By.className("cred-entry-url")).getText();
+		String credEntryUsername = driver.findElement(By.className("cred-entry-username")).getText();
+		String oldCredEntryPassword = driver.findElement(By.className("cred-entry-password")).getText();
+
+		Assertions.assertEquals(credEntryUrl, "https://udacity.com");
+		Assertions.assertEquals(credEntryUsername, "student");
+
+		// Edit Flow
+		driver.findElement(By.className("cred-entry-edit")).click();
+
+		webDriverWait.until(ExpectedConditions.visibilityOfElementLocated(By.id("credentialModal")));
+		WebElement credUrl = driver.findElement(By.id("credential-url"));
+		WebElement credUsername = driver.findElement(By.id("credential-username"));
+		WebElement credPassword = driver.findElement(By.id("credential-password"));
+		WebElement credSubmit = driver.findElement(By.id("save-cred-btn"));
+
+		credUrl.click();
+		credUrl.sendKeys("/user");
+		credUsername.click();
+		credUsername.sendKeys("_user");
+
+		credPassword.click();
+		credPassword.sendKeys("_update");
+		credSubmit.click();
+
+		// Navigate to Home/Credentials from Result Page
+		goHomeFromResult(webDriverWait);
+		openTab(webDriverWait, "credentials");
+		webDriverWait.until(ExpectedConditions.visibilityOfElementLocated(By.id("credentialTable")));
+
+		// Verify Credentials Edit
+		String editCredTitleText = driver.findElement(By.className("cred-entry-url")).getText();
+		String editCredDescText = driver.findElement(By.className("cred-entry-username")).getText();
+		String editCredPassText = driver.findElement(By.className("cred-entry-password")).getText();
+
+		Assertions.assertEquals(editCredTitleText, "https://udacity.com/user");
+		Assertions.assertEquals(editCredDescText, "student_user");
+		Assertions.assertNotEquals(editCredPassText, oldCredEntryPassword);
 	}
 }
 
