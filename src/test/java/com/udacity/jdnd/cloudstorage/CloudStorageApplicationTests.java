@@ -447,5 +447,35 @@ class CloudStorageApplicationTests {
 		Assertions.assertEquals(editCredDescText, "student_user");
 		Assertions.assertNotEquals(editCredPassText, oldCredEntryPassword);
 	}
+
+	@Test
+	public void deleteCredential() {
+		WebDriverWait webDriverWait = new WebDriverWait(driver, Duration.ofSeconds(2));
+
+		// Prepare Data
+		editCredential();
+
+		// Open Credential Section
+		openTab(webDriverWait, "credentials");
+
+		// Verify Existing Credential
+		webDriverWait.until(ExpectedConditions.visibilityOfElementLocated(By.id("credentialTable")));
+		String credEntryUrl = driver.findElement(By.className("cred-entry-url")).getText();
+		String credEntryUsername = driver.findElement(By.className("cred-entry-username")).getText();
+
+		Assertions.assertEquals(credEntryUrl, "https://udacity.com/user");
+		Assertions.assertEquals(credEntryUsername, "student_user");
+
+		// Delete Flow
+		driver.findElement(By.className("cred-entry-delete")).click();
+
+		// Navigate to Home/Credentials from Result Page
+		goHomeFromResult(webDriverWait);
+		openTab(webDriverWait, "credentials");
+		webDriverWait.until(ExpectedConditions.visibilityOfElementLocated(By.id("credentialTable")));
+
+		// Verify Credential Doesn't Exists
+		Assertions.assertThrows(NoSuchElementException.class, () -> driver.findElement(By.className("cred-entry-url")));
+	}
 }
 
