@@ -2,6 +2,7 @@ package com.udacity.jdnd.cloudstorage;
 
 import org.junit.jupiter.api.*;
 import org.openqa.selenium.By;
+import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
@@ -20,9 +21,6 @@ class CloudStorageApplicationTests {
 	private Integer port;
 	private static WebDriver driver;
 
-	@BeforeAll
-	public static void beforeAll() {}
-
 	@BeforeEach
 	public void beforeEach() {
 		driver = new ChromeDriver();
@@ -31,6 +29,8 @@ class CloudStorageApplicationTests {
 	@AfterEach
 	public void afterEach(){
 		if (driver != null) {
+			// Attempt Graceful termination
+			driver.close();
 			driver.quit();
 		}
 	}
@@ -83,6 +83,8 @@ class CloudStorageApplicationTests {
 		// You may have to modify the element "success-msg" and the sign-up
 		// success message below depending on the rest of your code.
 		*/
+		// Wait For Redirection!
+		webDriverWait.until(ExpectedConditions.titleContains("Login"));
 		Assertions.assertTrue(driver.findElement(By.id("success-msg")).getText().contains("You successfully signed up!"));
 	}
 
@@ -194,9 +196,158 @@ class CloudStorageApplicationTests {
 			System.out.println("Large File upload failed");
 		}
 		Assertions.assertFalse(driver.getPageSource().contains("HTTP Status 403 – Forbidden"));
-
 	}
 
 
+	// 1. Rubric - Test Signup and Login Flow
+	@Test
+	public void testSignupLogin() {
+		WebDriverWait webDriverWait = new WebDriverWait(driver, Duration.ofSeconds(2));
 
+		// verifies that the home page is not accessible without logging in
+		driver.get("http://localhost:" + this.port + "/home");
+        Assertions.assertNotSame("Home", driver.getTitle());
+
+		// signs up a new user, logs that user in, verifies that they can access the home page,
+		doMockSignUp("Udacity", "Java", "student", "roll_number");
+		doLogIn("student", "roll_number");
+		Assertions.assertEquals("Home", driver.getTitle());
+
+		// then logs out and verifies that the home page is no longer accessible
+		WebElement buttonLogout = driver.findElement(By.id("btn-logout"));
+		buttonLogout.click();
+		webDriverWait.until(ExpectedConditions.titleContains("Login"));
+		driver.get("http://localhost:" + this.port + "/home");
+		Assertions.assertNotSame("Home", driver.getTitle());
+	}
+
+	private void openTab(WebDriverWait driverWait, String title) {
+		driverWait.until(ExpectedConditions.titleContains("Home"));
+		WebElement notesTab = driver.findElement(By.id("nav-" + title +"-tab"));
+		notesTab.click();
+	}
+
+	private void openModal(WebDriverWait driverWait, String title) {
+		driverWait.until(ExpectedConditions.visibilityOfElementLocated(By.id("new-"+ title +"-btn")));
+		WebElement notesModalBtn = driver.findElement(By.id("new-"+ title +"-btn"));
+		notesModalBtn.click();
+	}
+
+	private void goHomeFromResult(WebDriverWait driverWait) {
+		driverWait.until(ExpectedConditions.titleContains("Result"));
+		driver.findElement(By.className("btn-go-home")).click();
+		driverWait.until(ExpectedConditions.titleContains("Home"));
+	}
+
+	// 2. Rubric - Test adding, editing, and deleting notes
+	@Test
+	public void createNote() {
+		WebDriverWait webDriverWait = new WebDriverWait(driver, Duration.ofSeconds(2));
+
+		// Existing User Login
+		doLogIn("student", "roll_number");
+
+		// Open Note Section
+		openTab(webDriverWait, "notes");
+
+		// Open Note Modal
+		openModal(webDriverWait, "note");
+
+		// Fill out the note
+		webDriverWait.until(ExpectedConditions.visibilityOfElementLocated(By.id("noteModalLabel")));
+		WebElement noteTitle = driver.findElement(By.id("note-title"));
+		WebElement noteDescription = driver.findElement(By.id("note-description"));
+		WebElement noteSubmit = driver.findElement(By.id("save-note-btn"));
+
+		noteTitle.click();
+		noteTitle.sendKeys("Note 1");
+		noteDescription.click();
+		noteDescription.sendKeys("Note 1 Description");
+		noteSubmit.click();
+
+		// Navigate to Home/Notes from Result Page
+		goHomeFromResult(webDriverWait);
+		openTab(webDriverWait, "notes");
+		webDriverWait.until(ExpectedConditions.visibilityOfElementLocated(By.id("userTable")));
+
+		// Verify Note Title
+		String noteTitleText = driver.findElement(By.className("note-entry-title")).getText();
+		Assertions.assertEquals(noteTitleText, "Note 1");
+	}
+
+	@Test
+	public void editNote() {
+		WebDriverWait webDriverWait = new WebDriverWait(driver, Duration.ofSeconds(2));
+
+		// Existing User Login
+		doLogIn("student", "roll_number");
+
+
+		// Open Note Section
+		openTab(webDriverWait, "notes");
+
+		// Verify Existing Note
+		webDriverWait.until(ExpectedConditions.visibilityOfElementLocated(By.id("userTable")));
+		String noteTitleText = driver.findElement(By.className("note-entry-title")).getText();
+		String noteDescText = driver.findElement(By.className("note-entry-desc")).getText();
+
+		Assertions.assertEquals(noteTitleText, "Note 1");
+		Assertions.assertEquals(noteDescText, "Note 1 Description");
+
+		// Edit Flow
+		driver.findElement(By.className("note-entry-edit")).click();
+
+		webDriverWait.until(ExpectedConditions.visibilityOfElementLocated(By.id("noteModalLabel")));
+		WebElement noteTitle = driver.findElement(By.id("note-title"));
+		WebElement noteDescription = driver.findElement(By.id("note-description"));
+		WebElement noteSubmit = driver.findElement(By.id("save-note-btn"));
+
+		noteTitle.click();
+		noteTitle.sendKeys(" - Edit");
+		noteDescription.click();
+		noteDescription.sendKeys(" - Edit");
+		noteSubmit.click();
+
+		// Navigate to Home/Notes from Result Page
+		goHomeFromResult(webDriverWait);
+		openTab(webDriverWait, "notes");
+		webDriverWait.until(ExpectedConditions.visibilityOfElementLocated(By.id("userTable")));
+
+		// Verify Note Edit
+		String editNoteTitleText = driver.findElement(By.className("note-entry-title")).getText();
+		String editNoteDescText = driver.findElement(By.className("note-entry-desc")).getText();
+		Assertions.assertEquals(editNoteTitleText, "Note 1 - Edit");
+		Assertions.assertEquals(editNoteDescText, "Note 1 Description - Edit");
+	}
+
+	@Test
+	public void deleteNote() {
+		WebDriverWait webDriverWait = new WebDriverWait(driver, Duration.ofSeconds(2));
+
+		// Existing User Login
+		doLogIn("student", "roll_number");
+
+		// Open Note Section
+		openTab(webDriverWait, "notes");
+
+		// Verify Existing Note
+		webDriverWait.until(ExpectedConditions.visibilityOfElementLocated(By.id("userTable")));
+		String noteTitleText = driver.findElement(By.className("note-entry-title")).getText();
+		String noteDescText = driver.findElement(By.className("note-entry-desc")).getText();
+
+		Assertions.assertEquals(noteTitleText, "Note 1 - Edit");
+		Assertions.assertEquals(noteDescText, "Note 1 Description - Edit");
+
+		// Delete Flow
+		driver.findElement(By.className("note-entry-delete")).click();
+
+		// Navigate to Home/Notes from Result Page
+		goHomeFromResult(webDriverWait);
+		openTab(webDriverWait, "notes");
+		webDriverWait.until(ExpectedConditions.visibilityOfElementLocated(By.id("userTable")));
+
+		// Verify Note Doesn't Exists
+		Assertions.assertThrows(NoSuchElementException.class, () -> driver.findElement(By.className("note-entry-title")));
+	}
 }
+
