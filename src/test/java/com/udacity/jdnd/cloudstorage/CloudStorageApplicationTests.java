@@ -349,5 +349,48 @@ class CloudStorageApplicationTests {
 		// Verify Note Doesn't Exists
 		Assertions.assertThrows(NoSuchElementException.class, () -> driver.findElement(By.className("note-entry-title")));
 	}
+
+
+	// 3. Test adding, editing and deleting credentials
+	@Test
+	public void createCredential() {
+		WebDriverWait webDriverWait = new WebDriverWait(driver, Duration.ofSeconds(2));
+
+		// Existing User Login
+		doLogIn("student", "roll_number");
+
+		// Open Credentials Section
+		openTab(webDriverWait, "credentials");
+
+		// Open Credential Modal
+		openModal(webDriverWait, "credential");
+
+		// Fill out the Credential
+		webDriverWait.until(ExpectedConditions.visibilityOfElementLocated(By.id("credentialModal")));
+		WebElement credUrl = driver.findElement(By.id("credential-url"));
+		WebElement credUsername = driver.findElement(By.id("credential-username"));
+		WebElement credPassword = driver.findElement(By.id("credential-password"));
+		WebElement credSubmit = driver.findElement(By.id("save-cred-btn"));
+
+		credUrl.click();
+		credUrl.sendKeys("https://udacity.com");
+
+		credUsername.click();
+		credUsername.sendKeys("student");
+
+		credPassword.click();
+		credPassword.sendKeys("roll_number");
+		credSubmit.click();
+
+		// Navigate to Home/Credentials from Result Page
+		goHomeFromResult(webDriverWait);
+		openTab(webDriverWait, "credentials");
+		webDriverWait.until(ExpectedConditions.visibilityOfElementLocated(By.id("credentialTable")));
+
+		// Verify Credential
+		Assertions.assertEquals(driver.findElement(By.className("cred-entry-url")).getText(), "https://udacity.com");
+		Assertions.assertEquals(driver.findElement(By.className("cred-entry-username")).getText(), "student");
+		Assertions.assertNotEquals(driver.findElement(By.className("cred-entry-password")).getText(), "roll_number");
+	}
 }
 
